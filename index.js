@@ -4,7 +4,6 @@ const db = require("./db/connection");
 let x = {};
 
 console.log("Welcome to the Employee Tracker Application!");
-// viewEmployees();
 init();
 
 function init() {
@@ -27,21 +26,36 @@ function init() {
       },
     ])
     .then((data) => {
-      console.log("outside if statement");
-      console.log("data=", data);
-      if (data === "View All Employees") {
-        console.log("inside if statement");
-        // viewEmployees();
-        // db.query("SELECT * FROM employee", function (err, results) {
-        //     console.table(results);
-        //   });
-      };
+      switch (data.task) {
+        case "View All Employees":
+          viewEmployees();
+          break;
+        case "Add Employees":
+          viewEmployees();
+          break;
+        case "Update Employee Role":
+          viewEmployees();
+          break;
+        case "View all Roles":
+          viewRoles();
+          break;
+        case "Add Role":
+          viewRoles();
+          break;
+        case "View All Departments":
+          viewDepartment();
+          break;
+        case "Add Department":
+          viewEmployees();
+          break;
+      }
     });
 }
 
 function viewEmployees() {
   db.query("SELECT * FROM employee", function (err, results) {
     console.table(results);
+    init();
   });
 }
 
@@ -73,19 +87,12 @@ function viewEmployees() {
 //     });
 // }
 
-// function viewRoles() {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "input",
-//         name: "name",
-//         message: "What is the name of the department? ",
-//       },
-//     ])
-//     .then((data) => {
-//       const newDepartment = new Department(data.name);
-//     });
-// }
+function viewRoles() {
+  db.query("SELECT * FROM role", function (err, results) {
+    console.table(results);
+    init();
+  });
+}
 
 // function addRole() {
 //   inquirer
@@ -113,19 +120,12 @@ function viewEmployees() {
 //     });
 // }
 
-// function viewDepartment() {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "input",
-//         name: "name",
-//         message: "What is the name of the department? ",
-//       },
-//     ])
-//     .then((data) => {
-//       const newDepartment = new Department(data.name);
-//     });
-// }
+function viewDepartment() {
+  db.query("SELECT * FROM department", function (err, results) {
+    console.table(results);
+    init();
+  });
+}
 
 // function addDepartment() {
 //   inquirer

@@ -53,7 +53,7 @@ function init() {
 }
 
 function viewEmployees() {
-  db.query("SELECT * FROM employee", function (err, results) {
+  db.query("SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS department, role.salary AS Salary, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id;", function (err, results) {
     console.table(results);
     init();
   });
@@ -65,11 +65,11 @@ function viewEmployees() {
 //       {
 //         type: "input",
 //         name: "firstName",
-//         message: "What is the name of the department? ",
+//         message: "What is the name of the employee? ",
 //       },
 //     ])
 //     .then((data) => {
-//       const newDepartment = new Department(data.name);
+//       const newEmployee = new Employee(data.name);
 //     });
 // }
 
@@ -79,19 +79,22 @@ function viewEmployees() {
 //       {
 //         type: "input",
 //         name: "name",
-//         message: "What is the name of the department? ",
+//         message: "What is the name of the role? ",
 //       },
 //     ])
 //     .then((data) => {
-//       const newDepartment = new Department(data.name);
+//       const newRole = new Role(data.name);
 //     });
 // }
 
 function viewRoles() {
-  db.query("SELECT * FROM role", function (err, results) {
-    console.table(results);
-    init();
-  });
+  db.query(
+    "SELECT role.title AS Role, role.salary AS Salary, department.name AS Department FROM role JOIN department ON role.department_id = department.id;",
+    function (err, results) {
+      console.table(results);
+      init();
+    }
+  );
 }
 
 // function addRole() {
@@ -116,12 +119,12 @@ function viewRoles() {
 //       },
 //     ])
 //     .then((data) => {
-//       const newDepartment = new Department(data.name);
+//       const newRole = new Role(data.name);
 //     });
 // }
 
 function viewDepartment() {
-  db.query("SELECT * FROM department", function (err, results) {
+  db.query("SELECT department.name AS Departments FROM department", function (err, results) {
     console.table(results);
     init();
   });

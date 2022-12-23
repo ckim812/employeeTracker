@@ -5,7 +5,7 @@ const { exit } = require("process");
 
 console.log("\n\nWelcome to the Employee Tracker Application!\n");
 // init();
-addRole();
+viewEmployees();
 
 function init() {
   inquirer
@@ -44,7 +44,7 @@ function init() {
           addRole();
           break;
         case "Add Employees":
-          viewEmployees();
+          addEmployee();
           break;
         case "Update Employee Role":
           viewEmployees();
@@ -81,8 +81,32 @@ function viewRoles() {
 
 function viewEmployees() {
   db.query(
-    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id;",
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_name AS Manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY ID;",
     function (err, results) {
+      updatedEmployees = [];
+
+      db.query(
+        "UPDATE employee SET Manager = 'None' WHERE manager_id IS NULL;",
+        function (err, results) {
+            console.log(results);
+        }
+      );
+
+      for (let i = 0; i < results.length; i++) {
+        console.log(i);
+        console.log(results[i].First);
+        db.query(
+          "UPDATE employee SET Manager =" +
+            `${results[i].First} ${results[i].Last}` +
+            "WHERE manager_id =" +
+            `${i + 1}`,
+          function (err, results) {
+            console.log(results);
+          }
+        );
+      }
+
+      console.log(results);
       console.table(results);
       init();
     }
@@ -115,9 +139,6 @@ function addRole() {
     for (let i = 0; i < results.length; i++) {
       currentDepartments.push(results[i].name);
     }
-
-    console.log(currentDepartments);
-
     inquirer
       .prompt([
         {
@@ -131,12 +152,11 @@ function addRole() {
           message: "What is the salary of the role? ",
         },
         {
-          loop: true,
+          loop: false,
           type: "list",
           name: "department",
           message: "Which department does the role belong to? ",
           choices: currentDepartments,
-          //   choices: ["Sales", "Engineering", "Finance", "Legal"],
         },
       ])
       .then((data) => {
@@ -152,19 +172,61 @@ function addRole() {
   });
 }
 
-// function addEmployee() {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "input",
-//         name: "firstName",
-//         message: "What is the name of the employee? ",
-//       },
-//     ])
-//     .then((data) => {
-//       const newEmployee = new Employee(data.name);
-//     });
-// }
+function addEmployee() {
+  db.query(
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id;",
+    function (err, results) {
+      let currentRoles = [];
+      for (let i = 0; i < results.length; i++) {
+        currentRoles.push(results[i].Role);
+      }
+      let currentEmployees = ["None"];
+      for (let i = 0; i < results.length; i++) {
+        currentEmployees.push(`${results[i].First} ${results[i].Last}`);
+      }
+      inquirer
+        .prompt([
+          {
+            type: "input",
+            name: "firstName",
+            message: "What is the employee's first name?",
+          },
+          {
+            type: "input",
+            name: "lastName",
+            message: "What is the employee's last name? ",
+          },
+          {
+            loop: false,
+            type: "list",
+            name: "role",
+            message: "What is the employee's role?",
+            choices: currentRoles,
+          },
+          {
+            loop: false,
+            type: "list",
+            name: "manager",
+            message: "Who is the employee's manager?",
+            choices: currentEmployees,
+          },
+        ])
+        .then((data) => {
+          roleID = currentRoles.indexOf(data.role) + 1;
+          data.manager === "None"
+            ? (managerID = null)
+            : (managerID = currentEmployees.indexOf(data.manager));
+          db.query(
+            `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}","${data.lastName}",${roleID},${managerID})`,
+            function (err, results) {
+              console.log("New Employee Added");
+              init();
+            }
+          );
+        });
+    }
+  );
+}
 
 // function updateRole() {
 //   inquirer

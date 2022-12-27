@@ -1,18 +1,17 @@
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-const db = require("./db/connection");
+const conn = require("./db/connection");
 const { exit } = require("process");
 
 console.log("\n\nWelcome to the Employee Tracker Application!\n");
-// init();
-viewEmployees();
+init();
 
 function init() {
   inquirer
     .prompt([
       {
         loop: false,
-        type: "rawlist",
+        type: "list",
         name: "task",
         message: "What would you like to do?",
         choices: [
@@ -53,14 +52,8 @@ function init() {
     });
 }
 
-//import database
-//use inquirer to ask questions
-//use async await with the databases
-
-//make another JS with questions?? (something to work towards)
-
 function viewDepartments() {
-  db.query(
+  conn.db.query(
     "SELECT department.name AS Departments FROM department",
     function (err, results) {
       console.table(results);
@@ -70,7 +63,7 @@ function viewDepartments() {
 }
 
 function viewRoles() {
-  db.query(
+  conn.db.query(
     "SELECT role.title AS Role, role.salary AS Salary, department.name AS Department FROM role JOIN department ON role.department_id = department.id;",
     function (err, results) {
       console.table(results);
@@ -80,35 +73,43 @@ function viewRoles() {
 }
 
 function viewEmployees() {
-  db.query(
-    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_name AS Manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY ID;",
-    function (err, results) {
-      updatedEmployees = [];
+  conn.db
+    .promise()
+    .query("UPDATE employee SET manager_name = 'N/A' WHERE manager_id IS NULL;")
+    .then(([rows, fields]) => {
+      //   console.log(rows);
+    })
+    .catch(console.log);
 
-      db.query(
-        "UPDATE employee SET Manager = 'None' WHERE manager_id IS NULL;",
+  conn.db.query(
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_id AS ManagerID, employee.manager_name AS Manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY ID;",
+    function (err, results) {
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].ManagerID !== "NULL") {
+          for (let j = 0; j < results.length; j++) {
+            if (results[i].ManagerID === j + 1) {
+              conn.db
+                .promise()
+                .query(
+                  `UPDATE employee SET manager_name = '${results[j].First} ${
+                    results[j].Last
+                  }' WHERE manager_id = ${j + 1};`
+                )
+                .then(([rows, fields]) => {
+                  // console.log(rows);
+                })
+                .catch(console.log);
+            }
+          }
+        }
+      }
+      conn.db.query(
+        "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_name AS Manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY ID;",
         function (err, results) {
-            console.log(results);
+          console.table(results);
+          init();
         }
       );
-
-      for (let i = 0; i < results.length; i++) {
-        console.log(i);
-        console.log(results[i].First);
-        db.query(
-          "UPDATE employee SET Manager =" +
-            `${results[i].First} ${results[i].Last}` +
-            "WHERE manager_id =" +
-            `${i + 1}`,
-          function (err, results) {
-            console.log(results);
-          }
-        );
-      }
-
-      console.log(results);
-      console.table(results);
-      init();
     }
   );
 }
@@ -123,7 +124,7 @@ function addDepartment() {
       },
     ])
     .then((data) => {
-      db.query(
+      conn.db.query(
         `INSERT INTO department (name) VALUES (${data.name})`,
         function (err, results) {
           console.log("New Department Added");
@@ -134,7 +135,7 @@ function addDepartment() {
 }
 
 function addRole() {
-  db.query("SELECT name FROM department", function (err, results) {
+  conn.db.query("SELECT name FROM department", function (err, results) {
     let currentDepartments = [];
     for (let i = 0; i < results.length; i++) {
       currentDepartments.push(results[i].name);
@@ -161,7 +162,7 @@ function addRole() {
       ])
       .then((data) => {
         departmentID = currentDepartments.indexOf(data.department) + 1;
-        db.query(
+        conn.db.query(
           `INSERT INTO role (title, salary, department_id) VALUES ("${data.title}",${data.salary},${departmentID})`,
           function (err, results) {
             console.log("New Role Added");
@@ -173,14 +174,14 @@ function addRole() {
 }
 
 function addEmployee() {
-  db.query(
+  conn.db.query(
     "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id;",
     function (err, results) {
       let currentRoles = [];
       for (let i = 0; i < results.length; i++) {
         currentRoles.push(results[i].Role);
       }
-      let currentEmployees = ["None"];
+      let currentEmployees = ["0"];
       for (let i = 0; i < results.length; i++) {
         currentEmployees.push(`${results[i].First} ${results[i].Last}`);
       }
@@ -216,10 +217,11 @@ function addEmployee() {
           data.manager === "None"
             ? (managerID = null)
             : (managerID = currentEmployees.indexOf(data.manager));
-          db.query(
+          conn.db.query(
             `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}","${data.lastName}",${roleID},${managerID})`,
             function (err, results) {
-              console.log("New Employee Added");
+              console.log("\nNew Employee Added\n");
+              viewEmployees();
               init();
             }
           );

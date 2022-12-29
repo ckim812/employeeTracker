@@ -29,7 +29,6 @@ function init() {
       },
     ])
     .then((data) => {
-      //   addDepartment();
       switch (data.task) {
         case "View All Departments":
           viewDepartments();
@@ -180,6 +179,9 @@ function addRole() {
 function addEmployee() {
   updateCurrentData();
 
+  console.log(currentEmployees);
+  console.log(currentRoles);
+ 
   inquirer
     .prompt([
       {
@@ -228,6 +230,9 @@ function addEmployee() {
 function updateRole() {
   updateCurrentData();
 
+console.log(currentEmployees);
+console.log(currentRoles);
+
   inquirer
     .prompt([
       {
@@ -260,26 +265,30 @@ function updateRole() {
 
 function updateCurrentData() {
   //get updated list of roles
-  conn.db
-    .promise()
+  conn.promisePool
     .query("SELECT role.title AS Role FROM role;")
     .then(([rows, fields]) => {
+        // console.log(rows);
+      currentRoles = [];
       for (let i = 0; i < rows.length; i++) {
         currentRoles.push(rows[i].Role);
       }
+    //   console.log(currentRoles);
     })
     .catch(console.log);
 
   //get updated list of employees
-  conn.db
-    .promise()
+  conn.promisePool
     .query(
       "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last FROM employee;"
     )
     .then(([rows, fields]) => {
+        // console.log(rows);
+      currentEmployees = [];
       for (let i = 0; i < rows.length; i++) {
         currentEmployees.push(`${rows[i].First} ${rows[i].Last}`);
       }
+    //   console.log(currentEmployees);
     })
     .catch(console.log);
 }

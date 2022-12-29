@@ -182,7 +182,7 @@ function addRole() {
 
 function addEmployee() {
   conn.db.query(
-    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id;",
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.manager_id FROM employee JOIN role ON employee.role_id = role.id;",
     function (err, results) {
       let currentRoles = [];
       for (let i = 0; i < results.length; i++) {
@@ -220,6 +220,7 @@ function addEmployee() {
           },
         ])
         .then((data) => {
+            console.log(currentRoles);
           roleID = currentRoles.indexOf(data.role) + 1;
           data.manager === "None"
             ? (managerID = null)
@@ -239,7 +240,7 @@ function addEmployee() {
 
 function updateRole() {
   conn.db.query(
-    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id;",
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.role_id AS RoleID FROM employee JOIN role ON employee.role_id = role.id;",
     function (err, results) {
       let currentRoles = [];
       for (let i = 0; i < results.length; i++) {
@@ -255,7 +256,7 @@ function updateRole() {
             loop: false,
             type: "list",
             name: "employee",
-            message: "Who's role would you like to change?",
+            message: "Which employee's role would you like to change?",
             choices: currentEmployees,
           },
           {
@@ -268,11 +269,9 @@ function updateRole() {
         ])
         .then((data) => {
           roleID = currentRoles.indexOf(data.role) + 1;
-          data.manager === "None"
-            ? (managerID = null)
-            : (managerID = currentEmployees.indexOf(data.manager));
+          employeeID = currentEmployees.indexOf(data.employee) + 1;
           conn.db.query(
-            `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}","${data.lastName}",${roleID},${managerID})`,
+            `UPDATE employee SET role_id = ${roleID} WHERE employee.id = ${employeeID};`,
             function (err, results) {
               console.log("\nEmployee Role Updated\n");
               viewEmployees();

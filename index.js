@@ -6,6 +6,8 @@ const { exit } = require("process");
 console.log("\n\nWelcome to the Employee Tracker Application!\n");
 init();
 
+// addDepartment();
+// addRole();
 function init() {
   inquirer
     .prompt([
@@ -26,6 +28,7 @@ function init() {
       },
     ])
     .then((data) => {
+      //   addDepartment();
       switch (data.task) {
         case "View All Departments":
           viewDepartments();
@@ -36,17 +39,17 @@ function init() {
         case "View All Employees":
           viewEmployees();
           break;
-        case "Add Department":
+        case "Add a Department":
           addDepartment();
           break;
-        case "Add Role":
+        case "Add a Role":
           addRole();
           break;
-        case "Add Employees":
+        case "Add an Employee":
           addEmployee();
           break;
-        case "Update Employee Role":
-          viewEmployees();
+        case "Update an Employee Role":
+          updateRole();
           break;
       }
     });
@@ -73,6 +76,7 @@ function viewRoles() {
 }
 
 function viewEmployees() {
+  //change Manager NULL values to "N/A"
   conn.db
     .promise()
     .query("UPDATE employee SET manager_name = 'N/A' WHERE manager_id IS NULL;")
@@ -81,6 +85,7 @@ function viewEmployees() {
     })
     .catch(console.log);
 
+  //input names into manager_name using manager_id to connect with employee_id
   conn.db.query(
     "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_id AS ManagerID, employee.manager_name AS Manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY ID;",
     function (err, results) {
@@ -103,6 +108,8 @@ function viewEmployees() {
           }
         }
       }
+
+      //print updated employee table after manager names have been updated
       conn.db.query(
         "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, department.name AS Department, role.salary AS Salary, employee.manager_name AS Manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY ID;",
         function (err, results) {
@@ -125,10 +132,10 @@ function addDepartment() {
     ])
     .then((data) => {
       conn.db.query(
-        `INSERT INTO department (name) VALUES (${data.name})`,
+        `INSERT INTO department (name) VALUES ("${data.name}")`,
         function (err, results) {
-          console.log("New Department Added");
-          init();
+          console.log("\nNew Department Added\n");
+          viewDepartments();
         }
       );
     });
@@ -165,8 +172,8 @@ function addRole() {
         conn.db.query(
           `INSERT INTO role (title, salary, department_id) VALUES ("${data.title}",${data.salary},${departmentID})`,
           function (err, results) {
-            console.log("New Role Added");
-            init();
+            console.log("\nNew Role Added\n");
+            viewRoles();
           }
         );
       });
@@ -181,7 +188,7 @@ function addEmployee() {
       for (let i = 0; i < results.length; i++) {
         currentRoles.push(results[i].Role);
       }
-      let currentEmployees = ["0"];
+      let currentEmployees = [];
       for (let i = 0; i < results.length; i++) {
         currentEmployees.push(`${results[i].First} ${results[i].Last}`);
       }
@@ -217,12 +224,12 @@ function addEmployee() {
           data.manager === "None"
             ? (managerID = null)
             : (managerID = currentEmployees.indexOf(data.manager));
+          managerID++;
           conn.db.query(
             `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}","${data.lastName}",${roleID},${managerID})`,
             function (err, results) {
               console.log("\nNew Employee Added\n");
               viewEmployees();
-              init();
             }
           );
         });
@@ -230,16 +237,48 @@ function addEmployee() {
   );
 }
 
-// function updateRole() {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "input",
-//         name: "name",
-//         message: "What is the name of the role? ",
-//       },
-//     ])
-//     .then((data) => {
-//       const newRole = new Role(data.name);
-//     });
-// }
+function updateRole() {
+  conn.db.query(
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last, role.title AS Role, employee.manager_id AS Manager_ID FROM employee JOIN role ON employee.role_id = role.id;",
+    function (err, results) {
+      let currentRoles = [];
+      for (let i = 0; i < results.length; i++) {
+        currentRoles.push(results[i].Role);
+      }
+      let currentEmployees = ["0"];
+      for (let i = 0; i < results.length; i++) {
+        currentEmployees.push(`${results[i].First} ${results[i].Last}`);
+      }
+      inquirer
+        .prompt([
+          {
+            loop: false,
+            type: "list",
+            name: "employee",
+            message: "Who's role would you like to change?",
+            choices: currentEmployees,
+          },
+          {
+            loop: false,
+            type: "list",
+            name: "role",
+            message: "What is the employee's new role?",
+            choices: currentRoles,
+          },
+        ])
+        .then((data) => {
+          roleID = currentRoles.indexOf(data.role) + 1;
+          data.manager === "None"
+            ? (managerID = null)
+            : (managerID = currentEmployees.indexOf(data.manager));
+          conn.db.query(
+            `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${data.firstName}","${data.lastName}",${roleID},${managerID})`,
+            function (err, results) {
+              console.log("\nEmployee Role Updated\n");
+              viewEmployees();
+            }
+          );
+        });
+    }
+  );
+}

@@ -17,6 +17,9 @@ const pool = mysql.createPool(
     user: "root",
     password: process.env.PW,
     database: "employee_db",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
   },
   console.log(`Connected pool to the employee_db database.`)
 );

@@ -176,12 +176,10 @@ function addRole() {
   });
 }
 
-function addEmployee() {
-  updateCurrentData();
+async function addEmployee() {
+  const updatedRoles = await updateCurrentRoles();
+  const updatedEmployees = await updateCurrentEmployees();
 
-  console.log(currentEmployees);
-  console.log(currentRoles);
- 
   inquirer
     .prompt([
       {
@@ -199,14 +197,14 @@ function addEmployee() {
         type: "list",
         name: "role",
         message: "What is the employee's role?",
-        choices: currentRoles,
+        choices: updatedRoles,
       },
       {
         loop: false,
         type: "list",
         name: "manager",
         message: "Who is the employee's manager?",
-        choices: currentEmployees,
+        choices: updatedEmployees,
       },
     ])
     .then((data) => {
@@ -227,11 +225,9 @@ function addEmployee() {
     });
 }
 
-function updateRole() {
-  updateCurrentData();
-
-console.log(currentEmployees);
-console.log(currentRoles);
+async function updateRole() {
+  const updatedRoles = await updateCurrentRoles();
+  const updatedEmployees = await updateCurrentEmployees();
 
   inquirer
     .prompt([
@@ -240,19 +236,19 @@ console.log(currentRoles);
         type: "list",
         name: "employee",
         message: "Which employee's role would you like to change?",
-        choices: currentEmployees,
+        choices: updatedEmployees,
       },
       {
         loop: false,
         type: "list",
         name: "role",
         message: "What is the employee's new role?",
-        choices: currentRoles,
+        choices: updatedRoles,
       },
     ])
     .then((data) => {
-      roleID = currentRoles.indexOf(data.role) + 1;
-      employeeID = currentEmployees.indexOf(data.employee) + 1;
+      roleID = updatedRoles.indexOf(data.role) + 1;
+      employeeID = updatedEmployees.indexOf(data.employee) + 1;
       conn.db.query(
         `UPDATE employee SET role_id = ${roleID} WHERE employee.id = ${employeeID};`,
         function (err, results) {
@@ -263,32 +259,26 @@ console.log(currentRoles);
     });
 }
 
-function updateCurrentData() {
-  //get updated list of roles
-  conn.promisePool
-    .query("SELECT role.title AS Role FROM role;")
-    .then(([rows, fields]) => {
-        // console.log(rows);
-      currentRoles = [];
-      for (let i = 0; i < rows.length; i++) {
-        currentRoles.push(rows[i].Role);
-      }
-    //   console.log(currentRoles);
-    })
-    .catch(console.log);
+async function updateCurrentRoles() {
+  //   get updated list of roles
+  const [rows, fields] = await conn.promisePool.query(
+    "SELECT role.title AS Role FROM role;"
+  );
+  currentRoles = [];
+  for (let i = 0; i < rows.length; i++) {
+    currentRoles.push(rows[i].Role);
+  }
+  return currentRoles;
+}
 
+async function updateCurrentEmployees() {
   //get updated list of employees
-  conn.promisePool
-    .query(
-      "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last FROM employee;"
-    )
-    .then(([rows, fields]) => {
-        // console.log(rows);
-      currentEmployees = [];
-      for (let i = 0; i < rows.length; i++) {
-        currentEmployees.push(`${rows[i].First} ${rows[i].Last}`);
-      }
-    //   console.log(currentEmployees);
-    })
-    .catch(console.log);
+  const [rows, fields] = await conn.promisePool.query(
+    "SELECT employee.id AS ID, employee.first_name AS First, employee.last_name AS Last FROM employee;"
+  );
+  currentEmployees = [];
+  for (let i = 0; i < rows.length; i++) {
+    currentEmployees.push(`${rows[i].First} ${rows[i].Last}`);
+  }
+  return currentEmployees;
 }

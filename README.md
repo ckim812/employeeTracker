@@ -50,10 +50,11 @@ THEN I am prompted to select an employee to update and their new role and this i
 ## Usage
 
 ```
-Type "npm i" to install Inquirer and Jest
+Type "npm i" to install Inquirer and Console.table
 Type "node index.js" when you are in the root directory
-Fill in the information required after selecting each prompt
-An HTML file will be created in "./dist"
+Choose a task: View All Departments, View All Roles, View All Employees, Add a Department, Add a Role, Add an Employee, or Update an Employee Role.
+Fill in the necessary information, if required, after selecting a task.
+Press "ctrl-c" to exit the app.
 ```
 
 ## Technologies-Used
